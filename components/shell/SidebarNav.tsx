@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandMark } from "./BrandMark";
 
 const MASTERIES = [
   { key: "entrepreneurship", label: "Entrepreneurship", color: "var(--mv-blue)" },
@@ -43,12 +44,7 @@ export function SidebarNav() {
       {/* Brand */}
       <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--mv-border)" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 10,
-            background: "linear-gradient(135deg, #7c3aed, #a855f7, #c084fc)",
-            boxShadow: "0 2px 8px rgba(168,85,247,0.2)",
-            flexShrink: 0,
-          }} />
+          <BrandMark size={32} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--mv-text)", letterSpacing: "-0.01em" }}>
               Speaker Intelligence

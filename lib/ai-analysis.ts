@@ -7,10 +7,19 @@ import type {
   AIGoalAlignment,
 } from "@/types/speaking";
 
-const openai = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY || "",
-  baseURL: "https://api.groq.com/openai/v1",
-});
+// Lazy-init: constructing the OpenAI client throws if apiKey is empty, which
+// would break `next build` even on routes that don't actually call the model.
+// Defer construction until the first call site that actually needs it (where
+// the GROQ_API_KEY check has already short-circuited the missing-key case).
+let _openai: OpenAI | null = null;
+function openai(): OpenAI {
+  if (_openai) return _openai;
+  _openai = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY || "",
+    baseURL: "https://api.groq.com/openai/v1",
+  });
+  return _openai;
+}
 
 // llama-3.1-8b-instant via Groq: higher free-tier TPM limit (20k vs 12k on 70B), fast.
 const MODEL = "llama-3.1-8b-instant";
@@ -139,7 +148,7 @@ export async function analyzeFeedbackBatch(feedbacks: string[]): Promise<AIFeedb
   if (cache.feedbacks[cacheKey]) return cache.feedbacks[cacheKey];
 
   if (!process.env.GROQ_API_KEY) {
-    console.warn("No OPENAI_API_KEY found, returning mock feedback analysis.");
+    console.warn("No GROQ_API_KEY found, returning mock feedback analysis.");
     return {
       transformationRate: 0.65,
       topPraiseThemes: ["Actionable frameworks", "High energy delivery", "Clear storytelling"],
@@ -153,7 +162,7 @@ export async function analyzeFeedbackBatch(feedbacks: string[]): Promise<AIFeedb
     .join("\n\n")}`;
 
   try {
-    const response = await withRetry(() => openai.chat.completions.create({
+    const response = await withRetry(() => openai().chat.completions.create({
       model: MODEL,
       max_tokens: 1024,
       response_format: { type: "json_object" },
@@ -195,7 +204,7 @@ export async function analyzeTranscript(transcript: string): Promise<AITranscrip
   const userMessage = `Transcript:\n\n${transcript.substring(0, 15000)}`;
 
   try {
-    const response = await withRetry(() => openai.chat.completions.create({
+    const response = await withRetry(() => openai().chat.completions.create({
       model: MODEL,
       max_tokens: 1024,
       response_format: { type: "json_object" },
@@ -231,7 +240,7 @@ export async function computeGoalAlignment(
   const userMessage = `Student goals:\n${surveyGoals.join(", ")}\n\nTaught topics:\n${transcriptTopics.join(", ")}`;
 
   try {
-    const response = await withRetry(() => openai.chat.completions.create({
+    const response = await withRetry(() => openai().chat.completions.create({
       model: MODEL,
       max_tokens: 500,
       response_format: { type: "json_object" },

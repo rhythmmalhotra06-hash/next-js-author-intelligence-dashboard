@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import { fetchAllMasteriesData } from "@/lib/multi-mastery-airtable";
 import { fetchFinanceData } from "@/lib/finance-airtable";

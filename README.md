@@ -25,13 +25,17 @@ npm run dev
 
 App runs at [http://localhost:3000](http://localhost:3000).
 
-## Required environment variables
+## Environment variables
 
-See [`.env.local.example`](./.env.local.example) for the full list. At minimum:
+See [`.env.local.example`](./.env.local.example) for the full list.
 
+**Required**:
 - `AIRTABLE_PAT` — Airtable Personal Access Token with `data.records:read` and `schema.bases:read` scopes. Create at https://airtable.com/create/tokens.
 
-Additional keys may be required for AI enrichment features (e.g. Groq for transcript analysis); see `lib/ai-analysis.ts`.
+**Optional** (for AI enrichment features — without these the app falls back to mock values):
+- `GROQ_API_KEY` — Groq API key, used via the OpenAI SDK pointed at Groq's OpenAI-compatible endpoint. Powers feedback theme extraction, transcript analysis, and goal alignment in `lib/ai-analysis.ts`. Create at https://console.groq.com/keys.
+
+> **Kessel deployment note**: set both `AIRTABLE_PAT` and `GROQ_API_KEY` in Kessel's secret manager / build-env config. All data-fetching pages are marked `dynamic = "force-dynamic"` so the build itself doesn't hit Airtable, but missing env vars will surface as runtime errors.
 
 ## Project structure
 

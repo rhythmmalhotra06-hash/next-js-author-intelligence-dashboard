@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import { fetchMasteryData } from "@/lib/multi-mastery-airtable";
 import { fetchOnboardingGoals } from "@/lib/airtable";

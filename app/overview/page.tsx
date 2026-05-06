@@ -32,9 +32,14 @@ export default async function OverviewPage() {
 
   // 4. Topic taxonomy: prefer AI-derived topics from the pre-baked cache
   // (`scripts/build-ai-cache.ts`); fall back to the cheap module-based
-  // aggregation when the cache is missing.
+  // aggregation when the cache is missing OR when the cache predates the
+  // `lessonsByMastery` schema (older payloads can't be filtered by mastery).
   const allLessons = allData.flatMap(d => d.lessons);
-  const aiTopics = loadAITopics();
+  const cachedAiTopics = loadAITopics();
+  const cacheIsCurrent = !!cachedAiTopics
+    && cachedAiTopics.length > 0
+    && cachedAiTopics.every(t => !!t.lessonsByMastery);
+  const aiTopics = cacheIsCurrent ? cachedAiTopics : null;
   const topics = aiTopics ?? computeTopicTaxonomy(allLessons);
   const topicsSource: "module" | "ai" = aiTopics ? "ai" : "module";
 

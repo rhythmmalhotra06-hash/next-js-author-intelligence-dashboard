@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Speaker Intelligence — A quick walkthrough</title>
+<style>
+  :root{
+    --brand:#7a12d4; --brand-bright:#9b37f2; --brand-dark:#4f0c8a; --brand-light:#f8efff;
+    --ink:#0f131a; --muted:#595e67; --subtle:#71767f; --line:#dfe1e5; --bg:#ffffff; --bg-soft:#f9f9f9;
+    --green:#159f65; --green-light:#e8f9f1;
+    --orange:#ed6325; --orange-light:#fff4e9;
+    --pink:#df1a6f; --pink-light:#feeaf3;
+    --blue:#005cff; --blue-light:#ebf5ff;
+    --amber-light:#fef3c7;
+    --shadow:0 8px 28px rgba(15,19,26,0.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-soft);color:var(--ink);font-family:"Google Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .stage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px}
+  .deck{width:min(1180px,100%);}
+  .slide{background:var(--bg);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:64px;display:none;min-height:660px;position:relative;animation:fade .25s ease}
+  .slide.active{display:flex;flex-direction:column;justify-content:center}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-bottom:14px}
+  h1{font-size:64px;line-height:1.02;letter-spacing:-0.025em;margin:0 0 18px;font-weight:700}
+  h2{font-size:44px;line-height:1.1;letter-spacing:-0.02em;margin:0 0 14px;font-weight:700}
+  h3{font-size:18px;margin:0 0 6px;font-weight:600}
+  .lede{font-size:22px;line-height:1.45;color:var(--muted);margin:0 0 8px;max-width:820px;font-weight:400}
+  .big{font-size:30px;line-height:1.3;color:var(--ink);margin:0 0 20px;max-width:880px;font-weight:500}
+  p{font-size:17px;line-height:1.55;color:var(--muted);margin:0 0 12px}
+  ul{margin:0;padding-left:20px}
+  li{font-size:17px;line-height:1.6;color:var(--ink);margin:8px 0}
+
+  /* visual bits */
+  .frame{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#f6f1fb,#fff5ee);position:relative;aspect-ratio:16/9;margin-top:14px;box-shadow:0 2px 8px rgba(15,19,26,0.06)}
+  .frame img{width:100%;height:100%;object-fit:cover;display:block;background:#fff}
+  .frame .placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--brand-dark);text-align:center;padding:24px;pointer-events:none}
+  .frame .placeholder .ph-icon{font-size:36px;opacity:.4;margin-bottom:10px}
+  .frame .placeholder .ph-label{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.7}
+  .frame .placeholder .ph-path{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;margin-top:6px;opacity:.55;background:rgba(255,255,255,.6);padding:4px 10px;border-radius:6px}
+  .frame img.loaded ~ .placeholder{display:none}
+
+  .split{display:grid;grid-template-columns:1fr 1.2fr;gap:32px;align-items:center}
+  .split.equal{grid-template-columns:1fr 1fr}
+
+  .pill{display:inline-block;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:var(--brand-light);color:var(--brand-dark)}
+
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
+  .three .item{padding:24px;border-radius:14px;background:var(--bg-soft);border:1px solid var(--line)}
+  .three .item .qmark{font-size:36px;line-height:1;color:var(--brand);font-weight:700;margin-bottom:10px}
+  .three .item h3{font-size:18px;margin:0 0 8px}
+  .three .item p{font-size:14px;margin:0}
+
+  .vs{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;margin-top:20px}
+  .vs .card{padding:28px;border-radius:14px;border:1px solid var(--line);background:var(--bg)}
+  .vs .card.before{background:#fff5f5;border-color:#fdd}
+  .vs .card.after{background:var(--brand-light);border-color:#e9d4f9}
+  .vs .arrow{font-size:32px;color:var(--brand);font-weight:300}
+  .vs h3{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+  .vs .one{font-size:24px;font-weight:600;color:var(--ink);line-height:1.3;margin:0}
+  .vs .two{font-size:18px;color:var(--muted);line-height:1.4;margin:8px 0 0}
+
+  .quad{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:14px;margin-top:14px;height:420px}
+  .quad .cell{border-radius:14px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid transparent;position:relative}
+  .quad .cell .label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;opacity:.7}
+  .quad .cell .name{font-size:24px;font-weight:700;margin:6px 0;line-height:1.15}
+  .quad .cell .do{font-size:15px;line-height:1.4}
+  .quad .anchor{background:var(--green-light);border-color:#bbe7d2;color:#0e6742}
+  .quad .premium{background:var(--blue-light);border-color:#bcd9ff;color:#1c3bd4}
+  .quad .develop{background:var(--amber-light);border-color:#f6d77b;color:#92670a}
+  .quad .discontinue{background:#fde2e2;border-color:#f5b3b3;color:#a02929}
+
+  .steps{counter-reset:step;margin-top:18px;display:flex;flex-direction:column;gap:14px}
+  .steps .step{display:flex;gap:18px;align-items:flex-start;padding:18px;background:var(--bg-soft);border-radius:12px;border:1px solid var(--line)}
+  .steps .step::before{counter-increment:step;content:counter(step);width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:16px}
+  .steps .step .body{flex:1}
+  .steps .step h3{font-size:18px;margin:0 0 4px}
+  .steps .step p{font-size:15px;margin:0}
+
+  .quote{font-size:24px;line-height:1.4;color:var(--ink);font-weight:500;border-left:4px solid var(--brand);padding:8px 22px;margin:24px 0;font-style:italic}
+
+  .footer{position:absolute;bottom:20px;left:64px;right:64px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--subtle)}
+  .progress{height:3px;background:var(--line);border-radius:2px;overflow:hidden;width:160px}
+  .progress > div{height:100%;background:var(--brand);transition:width .25s ease}
+
+  .nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px;box-shadow:var(--shadow);z-index:10}
+  .nav button{appearance:none;border:0;background:transparent;color:var(--ink);font-size:13px;padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:500}
+  .nav button:hover{background:var(--bg-soft)}
+  .nav .counter{font-variant-numeric:tabular-nums;color:var(--muted);padding:0 6px;align-self:center;font-size:13px}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;background:var(--bg-soft);border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:var(--muted)}
+
+  .hello{font-size:18px;color:var(--brand);font-weight:600;margin-bottom:8px}
+  .signed{margin-top:20px;font-size:14px;color:var(--subtle)}
+
+  @media (max-width:900px){
+    .slide{padding:36px 28px;min-height:560px}
+    .footer{left:28px;right:28px}
+    h1{font-size:42px}
+    h2{font-size:32px}
+    .big{font-size:22px}
+    .split,.split.equal,.three,.vs{grid-template-columns:1fr}
+    .vs .arrow{display:none}
+    .quad{height:auto;grid-template-columns:1fr}
+  }
+
+  @media print{
+    body,html{background:#fff}
+    .stage{padding:0}
+    .deck{width:100%}
+    .slide{display:flex !important;page-break-after:always;border-radius:0;border:0;box-shadow:none;min-height:90vh}
+    .nav{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="deck" id="deck">
+
+    <!-- 1 — Hello -->
+    <section class="slide">
+      <div class="hello">Hi Author Relations 👋</div>
+      <h1>Speaker Intelligence.</h1>
+      <p class="lede">A simple way to see which authors are working — and which conversations to have next.</p>
+      <div style="display:flex;gap:8px;margin-top:24px">
+        <span class="pill">5-minute walkthrough</span>
+        <span class="pill" style="background:var(--bg-soft);color:var(--muted)">No tech needed</span>
+      </div>
+      <div class="signed">Built with Marijana &amp; Marta in mind.</div>
+      <div class="footer"><span></span><span>Press <span class="kbd">→</span> to start</span></div>
+    </section>
+
+    <!-- 2 — The Why (before/after) -->
+    <section class="slide">
+      <div class="eyebrow">Why this exists</div>
+      <h2>Before, you had memory. Now, you have evidence.</h2>
+      <div class="vs">
+        <div class="card before">
+          <h3>Before</h3>
+          <p class="one">"I think she did well last cohort?"</p>
+          <p class="two">Six masteries. Six spreadsheets. Decisions made on recall.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="card after">
+          <h3>Now</h3>
+          <p class="one">"Here's exactly how she did. And what students said."</p>
+          <p class="two">All masteries, all data, in one place. Ready before every planning meeting.</p>
+        </div>
+      </div>
+      <div class="footer"><span>2 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 3 — Three questions -->
+    <section class="slide">
+      <div class="eyebrow">What it answers</div>
+      <h2>Three questions, answered fast.</h2>
+      <div class="three">
+        <div class="item">
+          <div class="qmark">?</div>
+          <h3>Should we rebook them?</h3>
+          <p>See ratings, replays, and what students actually said — for any speaker.</p>
+        </div>
+        <div class="item">
+          <div class="qmark">?</div>
+          <h3>Is this slot working?</h3>
+          <p>Spot when a curriculum slot keeps underperforming — no matter who fills it.</p>
+        </div>
+        <div class="item">
+          <div class="qmark">?</div>
+          <h3>Are we paying the right people?</h3>
+          <p>Fees and royalties next to performance. Find who's worth more — and who isn't.</p>
+        </div>
+      </div>
+      <div class="footer"><span>3 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 4 — The big idea (2 questions, not 1 score) -->
+    <section class="slide">
+      <div class="eyebrow">The big idea</div>
+      <h2>One score hides everything. So we don't use one.</h2>
+      <p class="big">A 4.9-rated speaker whose students never come back to the replay isn't a 4.9 speaker. We split the picture in two — so you can act on each half differently.</p>
+      <div class="split equal" style="margin-top:8px">
+        <div style="padding:24px;background:var(--brand-light);border-radius:14px">
+          <div class="pill" style="margin-bottom:10px">Did the lesson land?</div>
+          <h3 style="font-size:22px">Curriculum Fit</h3>
+          <p style="margin-top:6px">Was it the right topic? Did students learn what they came for?</p>
+        </div>
+        <div style="padding:24px;background:var(--brand-light);border-radius:14px">
+          <div class="pill" style="margin-bottom:10px">Did the speaker shine?</div>
+          <h3 style="font-size:22px">Author Craft</h3>
+          <p style="margin-top:6px">How well did they teach? Pacing, clarity, the rewatch test.</p>
+        </div>
+      </div>
+      <div class="footer"><span>4 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 5 — Tour: Overview -->
+    <section class="slide">
+      <div class="eyebrow">The pages · 1 of 4</div>
+      <h2>Overview — your starting page.</h2>
+      <p class="lede">Every speaker, every mastery, in one sortable list. Sort by rating. Sort by replay. Click any name to dig in.</p>
+      <div class="frame">
+        <img src="/guide-images/01-overview.png" alt="Overview page" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+        <div class="placeholder">
+          <div class="ph-icon">▦</div>
+          <div class="ph-label">Overview screenshot</div>
+          <div class="ph-path">/guide-images/01-overview.png</div>
+        </div>
+      </div>
+      <div class="footer"><span>5 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 6 — Tour: Author profile -->
+    <section class="slide">
+      <div class="eyebrow">The pages · 2 of 4</div>
+      <h2>Author profile — your re-book conversation, ready.</h2>
+      <p class="lede">Click any speaker. See everything: ratings, replays, what students praised, what they didn't, and the trend across cohorts.</p>
+      <div class="frame">
+        <img src="/guide-images/02-author.png" alt="Author profile" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+        <div class="placeholder">
+          <div class="ph-icon">◐</div>
+          <div class="ph-label">Author profile screenshot</div>
+          <div class="ph-path">/guide-images/02-author.png</div>
+        </div>
+      </div>
+      <div class="footer"><span>6 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 7 — Tour: Finance -->
+    <section class="slide">
+      <div class="eyebrow">The pages · 3 of 4</div>
+      <h2>Finance — what we paid, what we got.</h2>
+      <p class="lede">Fees and royalties next to ratings and replays. Find your underpaid stars. Find the ones who cost too much for what they delivered.</p>
+      <div class="frame">
+        <img src="/guide-images/03-finance.png" alt="Finance page" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+        <div class="placeholder">
+          <div class="ph-icon">$</div>
+          <div class="ph-label">Finance page screenshot</div>
+          <div class="ph-path">/guide-images/03-finance.png</div>
+        </div>
+      </div>
+      <div class="footer"><span>7 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 8 — Tour: Mastery + Speaking -->
+    <section class="slide">
+      <div class="eyebrow">The pages · 4 of 4</div>
+      <h2>Drill into one mastery.</h2>
+      <p class="lede">Every program has its own page — Speaking &amp; Influence is the deepest. Lesson by lesson. Module by module. Cohort vs cohort.</p>
+      <div class="frame">
+        <img src="/guide-images/04-mastery.png" alt="Mastery drill-down" onload="this.classList.add('loaded')" onerror="this.style.display='none'" />
+        <div class="placeholder">
+          <div class="ph-icon">◉</div>
+          <div class="ph-label">Mastery drill-down screenshot</div>
+          <div class="ph-path">/guide-images/04-mastery.png</div>
+        </div>
+      </div>
+      <div class="footer"><span>8 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 9 — The Quadrant -->
+    <section class="slide">
+      <div class="eyebrow">The decision shortcut</div>
+      <h2>Four boxes. Four moves.</h2>
+      <p class="lede">Every speaker lands in one of four zones. The zone tells you the next conversation.</p>
+      <div class="quad">
+        <div class="cell anchor">
+          <div class="label">High quality · low cost</div>
+          <div class="name">⭐ Anchor</div>
+          <div class="do">Lock them in. Book them early.</div>
+        </div>
+        <div class="cell premium">
+          <div class="label">High quality · high cost</div>
+          <div class="name">Premium</div>
+          <div class="do">Worth it for the right slot. Use selectively.</div>
+        </div>
+        <div class="cell develop">
+          <div class="label">Low quality · low cost</div>
+          <div class="name">Develop</div>
+          <div class="do">Coach them. Try once more. Then decide.</div>
+        </div>
+        <div class="cell discontinue">
+          <div class="label">Low quality · high cost</div>
+          <div class="name">Stop</div>
+          <div class="do">Don't rebook. Have the conversation.</div>
+        </div>
+      </div>
+      <div class="footer"><span>9 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 10 — The 'aha' moment -->
+    <section class="slide">
+      <div class="eyebrow">The thing to watch for</div>
+      <h2>When the numbers disagree — that's the gold.</h2>
+      <p class="big">A great rating with no replay views? Students were entertained but didn't transform.<br/>A low rating in a slot that always fails? It's the slot, not the speaker.</p>
+      <p class="quote">The dashboard flags these moments for you. Most of your best decisions will start there.</p>
+      <div class="footer"><span>10 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 11 — Try this on Monday -->
+    <section class="slide">
+      <div class="eyebrow">Your first 5 minutes</div>
+      <h2>Try this on Monday.</h2>
+      <div class="steps">
+        <div class="step"><div class="body"><h3>Open Overview, sort by rating.</h3><p>Look at the top 5 and the bottom 5. Are there any names that surprise you?</p></div></div>
+        <div class="step"><div class="body"><h3>Click on one surprising name.</h3><p>Read what students actually said. The praise themes. The criticisms.</p></div></div>
+        <div class="step"><div class="body"><h3>Open Finance, sort by cost.</h3><p>Find one speaker we're paying a lot. Are they earning it? That's your next conversation.</p></div></div>
+      </div>
+      <div class="footer"><span>11 / 12</span><div class="progress"><div></div></div></div>
+    </section>
+
+    <!-- 12 — Wrap -->
+    <section class="slide">
+      <div class="eyebrow">That's it</div>
+      <h1 style="font-size:54px">Stop guessing.<br/>Start showing.</h1>
+      <p class="big">Bring this dashboard to your next planning meeting. Walk in with patterns, not opinions.</p>
+      <div style="margin-top:24px;padding:20px 24px;background:var(--brand-light);border-radius:12px;display:inline-block">
+        <div style="font-size:14px;color:var(--brand-dark);font-weight:600;margin-bottom:4px">Questions?</div>
+        <div style="font-size:16px;color:var(--ink)">Ping Rhythm — happy to walk you through it live.</div>
+      </div>
+      <div class="footer"><span>12 / 12 · End</span><div class="progress"><div></div></div></div>
+    </section>
+
+  </div>
+</div>
+
+<div class="nav" role="navigation" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous slide">←</button>
+  <span class="counter" id="counter">1 / 12</span>
+  <button id="next" aria-label="Next slide">→</button>
+  <button id="full" title="Fullscreen (F)">⛶</button>
+  <button id="print" title="Print (P)">⎙</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const counter = document.getElementById('counter');
+  const progressBars = document.querySelectorAll('.progress > div');
+  let idx = 0;
+
+  function render(){
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    counter.textContent = (idx + 1) + ' / ' + slides.length;
+    const pct = ((idx + 1) / slides.length) * 100;
+    progressBars.forEach(b => b.style.width = pct + '%');
+    history.replaceState(null, '', '#' + (idx + 1));
+  }
+  function go(i){ idx = Math.max(0, Math.min(slides.length - 1, i)); render(); }
+  function next(){ go(idx + 1); }
+  function prev(){ go(idx - 1); }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('full').addEventListener('click', () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  });
+  document.getElementById('print').addEventListener('click', () => window.print());
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { next(); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { prev(); e.preventDefault(); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+    else if (e.key === 'f' || e.key === 'F') { document.getElementById('full').click(); }
+    else if (e.key === 'p' || e.key === 'P') { window.print(); }
+  });
+
+  let touchX = 0;
+  document.addEventListener('touchstart', e => touchX = e.changedTouches[0].clientX, {passive:true});
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (dx > 50) prev(); else if (dx < -50) next();
+  }, {passive:true});
+
+  const startAt = parseInt((location.hash || '').slice(1), 10);
+  if (Number.isFinite(startAt) && startAt > 0) idx = Math.min(slides.length - 1, startAt - 1);
+  render();
+</script>
+</body>
+</html>

@@ -72,6 +72,24 @@ export function SidebarNav() {
           />
         ))}
         <NavItem href="/speaking" label="Speaking" icon="◉" active={pathname === "/speaking"} />
+
+        <div style={{ margin: "20px 0 8px 8px", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--mv-text-subtle)" }}>
+          Resources
+        </div>
+        <a href="/guide.html" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "8px 10px", borderRadius: 8, marginBottom: 2,
+            color: "var(--mv-text-muted)",
+            fontSize: 13, fontWeight: 400,
+            transition: "all 120ms ease",
+            borderLeft: "2px solid transparent",
+          }}>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>?</span>
+            How &amp; Why guide
+            <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--mv-text-subtle)" }}>↗</span>
+          </div>
+        </a>
       </nav>
 
       {/* Footer */}

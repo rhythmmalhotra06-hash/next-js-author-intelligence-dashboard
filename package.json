@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "guide:shots": "node scripts/capture-guide-shots.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.93.0",
@@ -24,6 +25,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "playwright": "^1.59.1",
     "typescript": "^5"
   }
 }

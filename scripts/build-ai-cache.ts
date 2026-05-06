@@ -9,7 +9,14 @@
  * request time.
  */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+// Next.js loads .env.local automatically at runtime, but standalone tsx scripts
+// don't — load both so this script works regardless of which file holds keys.
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+
 import { fetchAllMasteriesData } from "@/lib/multi-mastery-airtable";
 import { buildUnifiedAuthorTable } from "@/lib/signals";
 import { enrichUnifiedAuthorsWithAI, enrichTopicTaxonomy } from "@/lib/ai-enrichment";

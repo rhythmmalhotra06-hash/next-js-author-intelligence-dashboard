@@ -127,6 +127,21 @@ function stdDev(vals: (number | null)[]): number | null {
   return Math.sqrt(avgSquareDiff);
 }
 
+// Generic-bucket speaker labels that appear in Airtable lesson/feedback rows
+// but aren't actual people. Filtered out of the unified author table so they
+// don't show up as authors with permanently-pending AI insights.
+const GENERIC_AUTHOR_KEYS = new Set([
+  "all core faculty",
+  "all faculty",
+  "core faculty",
+  "all speakers",
+  "all authors",
+  "mindvalley team",
+  "mv team",
+  "tba",
+  "tbd",
+]);
+
 // ---------------------------------------------------------------------------
 // Signal Builders
 // ---------------------------------------------------------------------------
@@ -199,6 +214,14 @@ export async function buildUnifiedAuthorTable(
           entry.masteries.add(masteryKey);
         }
       }
+    }
+  }
+
+  // 1a. Drop generic-bucket entries (e.g. "All Core Faculty") so they don't
+  // pollute the author list as permanently-pending AI rows.
+  for (const key of Array.from(authorsByNormalisedName.keys())) {
+    if (GENERIC_AUTHOR_KEYS.has(key)) {
+      authorsByNormalisedName.delete(key);
     }
   }
 

@@ -346,19 +346,26 @@ export function AuthorProfileView({ author }: Props) {
             </div>
           </div>
         </div>
-      ) : (
-        <div style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
-            Qualitative Intelligence
-            <span className="mv-badge mv-badge--orange" style={{ marginLeft: 12, verticalAlign: "middle", fontSize: 10 }}>
-              Analysis Pending
-            </span>
-          </h2>
-          <div className="of-card of-table__muted" style={{ padding: 16, fontSize: 13 }}>
-            Not enough feedback data yet to generate AI insights for this author.
+      ) : (() => {
+        // Mirror of QUALITATIVE_CARD_MIN_FEEDBACK in lib/ai-enrichment.ts —
+        // duplicated here because that module pulls in server-only deps.
+        const QUALITATIVE_CARD_MIN_FEEDBACK = 3;
+        const totalFeedback = author.perMastery.reduce((acc, p) => acc + p.feedbackCount, 0);
+        const remaining = Math.max(0, QUALITATIVE_CARD_MIN_FEEDBACK - totalFeedback);
+        return (
+          <div style={{ marginBottom: 40 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
+              Qualitative Intelligence
+              <span className="mv-badge mv-badge--orange" style={{ marginLeft: 12, verticalAlign: "middle", fontSize: 10 }}>
+                Analysis Pending
+              </span>
+            </h2>
+            <div className="of-card of-table__muted" style={{ padding: 16, fontSize: 13 }}>
+              Pending — needs {remaining} more feedback {remaining === 1 ? "row" : "rows"} (have {totalFeedback} / {QUALITATIVE_CARD_MIN_FEEDBACK}).
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Per-Mastery Breakdown ────────────────────────────── */}
       <div style={{ marginBottom: 40 }}>

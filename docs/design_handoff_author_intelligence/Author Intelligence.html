@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Author Intelligence — Redesign</title>
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="components.css" />
+<style>
+  html, body, #root { height: 100%; margin: 0; }
+  body { font-family: "Google Sans", system-ui, sans-serif; color: var(--mv-text); background: var(--mv-grey-100); }
+  * { box-sizing: border-box; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  /* Hide scrollbars in dark theme overview C while keeping scroll functional */
+  [data-mv-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); background-clip: padding-box; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel" src="brand.jsx"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="charts.jsx"></script>
+<script type="text/babel" src="ui.jsx"></script>
+<script type="text/babel" src="shell.jsx"></script>
+<script type="text/babel" src="data.jsx"></script>
+
+<script type="text/babel" src="simple.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "purple",
+  "density": "comfortable",
+  "logoStyle": "dual-circle"
+}/*EDITMODE-END*/;
+
+const ACCENT_MAP = {
+  purple: { a: "#7a12d4", b: "#df1a6f" },
+  blue:   { a: "#005cff", b: "#329dff" },
+  pink:   { a: "#df1a6f", b: "#7a12d4" },
+  green:  { a: "#159f65", b: "#329dff" },
+  orange: { a: "#ed6325", b: "#df1a6f" },
+};
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const accent = ACCENT_MAP[tweaks.accent]?.a || "#7a12d4";
+  const accent2 = ACCENT_MAP[tweaks.accent]?.b || "#df1a6f";
+  const density = tweaks.density;
+
+  const variants = [
+    {
+      groupId: "author",
+      groupTitle: "Author profile — Jimmy Naraine",
+      groupSub: "Same elements as your screenshot, redesigned: cleaner hierarchy, top tab nav, framed KPI strip with 'Not yet measured' replacing em-dashes, and a proper finance section.",
+      items: [
+        { id: "au-simple", label: "Author profile · simplified", w: 1280, h: 1220, render: () => <AuthorProfileSimple accent={accent} /> },
+      ],
+    },
+    {
+      groupId: "overview",
+      groupTitle: "Overview — same pattern, applied across all authors",
+      groupSub: "Identical visual language so the two screens feel like one product.",
+      items: [
+        { id: "ov-simple", label: "Overview · simplified", w: 1280, h: 1280, render: () => <OverviewSimple accent={accent} /> },
+      ],
+    },
+  ];
+
+  return (
+    <>
+      <DesignCanvas
+        title="Author Intelligence — Redesign explorations"
+        subtitle="Mindvalley · 5 layouts across two screens"
+      >
+        {variants.map(v => (
+          <DCSection key={v.groupId} id={v.groupId} title={v.groupTitle} subtitle={v.groupSub}>
+            {v.items.map(it => (
+              <DCArtboard key={it.id} id={it.id} label={it.label} width={it.w} height={it.h}>
+                {it.render()}
+              </DCArtboard>
+            ))}
+          </DCSection>
+        ))}
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Brand">
+          <TweakRadio label="Accent color" value={tweaks.accent} onChange={(v) => setTweak("accent", v)}
+            options={[
+              { value: "purple", label: "Purple" },
+              { value: "blue", label: "Blue" },
+              { value: "pink", label: "Pink" },
+              { value: "green", label: "Green" },
+              { value: "orange", label: "Orange" },
+            ]} />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

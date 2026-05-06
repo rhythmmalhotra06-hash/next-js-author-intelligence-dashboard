@@ -1,0 +1,9 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import "./of.css";
+import { SidebarNav } from "@/components/shell/SidebarNav";
+
+export const metadata: Metadata = {
+  title: "Speaker Intelligence â Mindvalley",
+  descriptio
+<truncated 531 bytes>

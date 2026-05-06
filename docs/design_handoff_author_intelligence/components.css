@@ -1,0 +1,181 @@
+/* ================================================================
+   Mindvalley Design System — Components
+   Depends on tokens.css
+   ================================================================ */
+
+/* ————————————————— Button ————————————————— */
+.mv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--mv-font-body);
+  font-weight: var(--mv-weight-medium);
+  font-size: 16px;
+  line-height: 1;
+  border-radius: var(--mv-radius-full);
+  padding: 14px 28px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--mv-dur-fast) var(--mv-ease-standard),
+              color    var(--mv-dur-fast) var(--mv-ease-standard),
+              border   var(--mv-dur-fast) var(--mv-ease-standard),
+              transform var(--mv-dur-fast) var(--mv-ease-standard);
+  text-decoration: none;
+  user-select: none;
+}
+.mv-btn:focus-visible { outline: none; box-shadow: var(--mv-shadow-focus); }
+.mv-btn:active { transform: translateY(1px); }
+
+.mv-btn--primary {
+  background: var(--mv-brand);
+  color: var(--mv-white);
+}
+.mv-btn--primary:hover { background: var(--mv-brand-content); }
+
+.mv-btn--secondary {
+  background: var(--mv-white);
+  color: var(--mv-text);
+  border-color: var(--mv-border-strong);
+}
+.mv-btn--secondary:hover { background: var(--mv-grey-100); }
+
+.mv-btn--ghost {
+  background: transparent;
+  color: var(--mv-brand);
+}
+.mv-btn--ghost:hover { background: var(--mv-brand-light); }
+
+.mv-btn--inverse {
+  background: var(--mv-white);
+  color: var(--mv-brand-dark);
+}
+.mv-btn--inverse:hover { background: var(--mv-grey-150); }
+
+.mv-btn--sm { padding: 10px 18px; font-size: 14px; }
+.mv-btn--lg { padding: 18px 36px; font-size: 18px; }
+
+/* ————————————————— Input ————————————————— */
+.mv-input {
+  display: block;
+  width: 100%;
+  font-family: var(--mv-font-body);
+  font-size: 16px;
+  line-height: 1.4;
+  padding: 14px 16px;
+  color: var(--mv-text);
+  background: var(--mv-white);
+  border: 1px solid var(--mv-border-strong);
+  border-radius: var(--mv-radius-sm);
+  transition: border var(--mv-dur-fast), box-shadow var(--mv-dur-fast);
+}
+.mv-input::placeholder { color: var(--mv-text-subtle); }
+.mv-input:focus { outline: none; border-color: var(--mv-brand); box-shadow: var(--mv-shadow-focus); }
+
+/* ————————————————— Card ————————————————— */
+.mv-card {
+  background: var(--mv-surface);
+  border-radius: var(--mv-radius-md);
+  padding: var(--mv-space-9);
+  box-shadow: var(--mv-shadow-light);
+  border: 1px solid var(--mv-border-muted);
+}
+.mv-card--elevated { box-shadow: var(--mv-shadow-medium); border: none; }
+.mv-card--interactive { cursor: pointer; transition: box-shadow var(--mv-dur-base), transform var(--mv-dur-base); }
+.mv-card--interactive:hover { box-shadow: var(--mv-shadow-strong); transform: translateY(-2px); }
+
+/* Course card — the dominant card pattern in Mindvalley product UI */
+.mv-course-card {
+  position: relative;
+  border-radius: var(--mv-radius-md);
+  overflow: hidden;
+  background: var(--mv-grey-650);
+  color: var(--mv-white);
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: flex-end;
+  padding: var(--mv-space-7);
+  cursor: pointer;
+  isolation: isolate;
+}
+.mv-course-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15,19,26,0) 40%, rgba(15,19,26,0.85) 100%);
+  z-index: -1;
+}
+.mv-course-card img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; z-index: -2;
+  transition: transform var(--mv-dur-slow) var(--mv-ease-standard);
+}
+.mv-course-card:hover img { transform: scale(1.04); }
+
+/* ————————————————— Badge / Tag ————————————————— */
+.mv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: var(--mv-weight-medium);
+  border-radius: var(--mv-radius-full);
+  background: var(--mv-brand-light);
+  color: var(--mv-brand-content);
+}
+.mv-badge--green  { background: var(--mv-green-light);  color: var(--mv-green-content); }
+.mv-badge--orange { background: var(--mv-orange-light); color: var(--mv-orange-content); }
+.mv-badge--blue   { background: var(--mv-blue-light);   color: var(--mv-blue-content); }
+.mv-badge--grey   { background: var(--mv-grey-150);     color: var(--mv-grey-550); }
+
+/* ————————————————— Divider ————————————————— */
+.mv-divider { height: 1px; background: var(--mv-border); border: 0; margin: var(--mv-space-9) 0; }
+
+/* ————————————————— Nav (product top bar) ————————————————— */
+.mv-topbar {
+  display: flex; align-items: center; gap: var(--mv-space-11);
+  height: 64px; padding: 0 var(--mv-space-9);
+  background: var(--mv-white);
+  border-bottom: 1px solid var(--mv-border-muted);
+}
+.mv-topbar__logo { color: var(--mv-text); height: 22px; }
+.mv-topbar__nav { display: flex; gap: var(--mv-space-9); flex: 1; }
+.mv-topbar__nav a {
+  color: var(--mv-text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: var(--mv-weight-medium);
+  padding: 8px 0;
+  border-bottom: 2px solid transparent;
+  transition: color var(--mv-dur-fast), border-color var(--mv-dur-fast);
+}
+.mv-topbar__nav a:hover { color: var(--mv-text); }
+.mv-topbar__nav a.is-active { color: var(--mv-brand); border-color: var(--mv-brand); }
+
+/* ————————————————— Avatar ————————————————— */
+.mv-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--mv-brand-light);
+  color: var(--mv-brand-content);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: var(--mv-weight-medium);
+  font-size: 14px;
+  overflow: hidden;
+}
+.mv-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ————————————————— Progress ————————————————— */
+.mv-progress {
+  height: 4px;
+  background: var(--mv-grey-200);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.mv-progress__bar {
+  height: 100%;
+  background: var(--mv-brand);
+  border-radius: 2px;
+  transition: width var(--mv-dur-slow) var(--mv-ease-standard);
+}

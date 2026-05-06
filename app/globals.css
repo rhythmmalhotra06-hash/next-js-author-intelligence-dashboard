@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./of.css";
+
+/* ================================================================
+   Project-specific token additions
+   tokens.css ships the canonical Mindvalley DS. The dashboard uses a
+   handful of extra tokens (amber palette, semibold/extrabold weights,
+   subtle borders, glass surfaces, shadow alias, topbar height, red
+   tinted variants) that aren't in the brand pack — defined here so
+   of.css and inline styles resolve cleanly.
+   ================================================================ */
+:root {
+  --mv-sidebar-width: 260px;
+  --mv-topbar-height: 56px;
+
+  /* Extra weights referenced by component CSS */
+  --mv-weight-semibold:  600;
+  --mv-weight-extrabold: 800;
+
+  /* Subtle border + surface variants used by tables / panels */
+  --mv-border-subtle:   rgba(15, 19, 26, 0.06);
+  --mv-surface-subtle:  #f9f9f9;
+  --mv-surface-glass:   rgba(255, 255, 255, 0.72);
+
+  /* Shadow alias — components reference --mv-shadow-card */
+  --mv-shadow-card:     var(--mv-shadow-light);
+
+  /* Red — only the base hue is in tokens.css. Add tints for callouts. */
+  --mv-red-light:       #fdecec;
+  --mv-red-content:     #b32525;
+
+  /* Amber — used for "warn" callouts in addition to orange */
+  --mv-amber:           #f59e0b;
+  --mv-amber-light:     #fef3c7;
+  --mv-amber-content:   #92400e;
+
+  /* Legacy alias — some components reference --mv-purple */
+  --mv-purple:          var(--mv-brand);
+
+  /* Teal — AI Mastery mastery dot + teal badge */
+  --mv-teal:            #0d9488;
+  --mv-teal-light:      #e6f7f5;
+  --mv-teal-content:    #0a7a70;
+
+  /* Bridge for Tailwind v4 + the body element. Browser falls back to
+     the system stack if Google Sans fails to load. */
+  --font-sans:          var(--mv-font-body);
+}
+
+[data-mv-theme="dark"] {
+  --mv-border-subtle:   rgba(255, 255, 255, 0.08);
+  --mv-surface-subtle:  #181d26;
+  --mv-surface-glass:   rgba(24, 29, 38, 0.72);
+}
+
+/* ================================================================
+   --of-* legacy aliases used by ScheduleTable inline styles. They
+   pre-date the --mv-* migration; keep the names but point at the
+   canonical tokens.
+   ================================================================ */
+:root {
+  --of-purple:        var(--mv-brand);
+  --of-green:         var(--mv-green);
+  --of-green-subtle:  var(--mv-green-light);
+  --of-orange:        var(--mv-orange);
+  --of-red:           var(--mv-red);
+  --of-red-subtle:    var(--mv-red-light);
+  --of-border:        var(--mv-border);
+  --of-surface-1:     var(--mv-surface);
+  --of-surface-2:     var(--mv-surface-subtle);
+  --of-text-primary:  var(--mv-text);
+  --of-text-secondary: var(--mv-text-muted);
+  --of-text-muted:    var(--mv-text-subtle);
+}
+
+/* ================================================================
+   Tailwind v4 theme bridge — exposes the font stack to utility classes
+   like font-sans so components written with Tailwind get the brand font.
+   ================================================================ */
+@theme inline {
+  --font-sans: var(--mv-font-body);
+  --font-mono: var(--mv-font-mono);
+  --color-brand: var(--mv-brand);
+}
+
+/* ================================================================
+   Body defaults — pull from semantic tokens so dark mode works.
+   ================================================================ */
+body {
+  font-family: var(--mv-font-body);
+  background: var(--mv-bg);
+  color: var(--mv-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

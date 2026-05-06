@@ -10,6 +10,8 @@ import type {
 } from "@/types/speaking";
 import { normaliseName } from "./signals";
 
+type MasteryCounts = Partial<Record<MasteryKey, number>>;
+
 // Sprint 5 thresholds — split per AC.
 const TRANSFORMATION_RATE_MIN_FEEDBACK = 10; // AC1: Speaking & Influence only
 const QUALITATIVE_CARD_MIN_FEEDBACK = 3;     // AC2: any masteries
@@ -138,6 +140,7 @@ export async function enrichTopicTaxonomy(
     lessonCount: number;
     speakers: Map<string, number>;
     rates: number[]; // transformation rates from authors who taught this topic
+    lessonsByMastery: MasteryCounts;
   }>();
 
   await pool(candidates, MAX_CONCURRENT_AI_CALLS, async (lesson) => {
@@ -155,10 +158,12 @@ export async function enrichTopicTaxonomy(
       if (!norm) continue;
       let entry = byTopic.get(norm);
       if (!entry) {
-        entry = { lessonCount: 0, speakers: new Map(), rates: [] };
+        entry = { lessonCount: 0, speakers: new Map(), rates: [], lessonsByMastery: {} };
         byTopic.set(norm, entry);
       }
       entry.lessonCount += 1;
+      entry.lessonsByMastery[lesson.masteryKey] =
+        (entry.lessonsByMastery[lesson.masteryKey] ?? 0) + 1;
       for (const rawName of lesson.speakerNames) {
         entry.speakers.set(rawName, (entry.speakers.get(rawName) ?? 0) + 1);
         const author = authorByKey.get(normaliseName(rawName));
@@ -170,7 +175,7 @@ export async function enrichTopicTaxonomy(
   });
 
   return Array.from(byTopic.entries())
-    .map(([topic, { lessonCount, speakers, rates }]) => ({
+    .map(([topic, { lessonCount, speakers, rates, lessonsByMastery }]) => ({
       topic,
       lessonCount,
       transformationRate: rates.length > 0
@@ -180,9 +185,11 @@ export async function enrichTopicTaxonomy(
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([name]) => name),
+      lessonsByMastery,
     }))
-    .sort((a, b) => b.lessonCount - a.lessonCount)
-    .slice(0, 10);
+    .sort((a, b) => b.lessonCount - a.lessonCount);
+  // Slicing happens client-side after the mastery filter is applied so topics
+  // that rank low globally can still surface within a single mastery.
 }
 
 /**

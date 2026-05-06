@@ -136,6 +136,32 @@ export function OverviewClient({ authors, unresolvedMatches, unmatched, topics, 
     });
   }, [authors, searchQuery, crossProgramFilter, selectedMasteries, minRating, minRewatch, maxConsistency, yearFilter, sessionTypeFilter]);
 
+  // Topic taxonomy — filter + recount based on selected masteries, then re-rank
+  // and slice to top 10. Topics without per-mastery breakdown (older AI cache)
+  // pass through with their original count when no filter is active.
+  const filteredTopics = useMemo(() => {
+    const allSelected = selectedMasteries.length === ALL_MASTERIES.length;
+    const recounted = topics
+      .map(t => {
+        if (allSelected) return t;
+        if (!t.lessonsByMastery) {
+          // No breakdown available — drop it from a filtered view rather than
+          // misrepresent it as belonging to the selected mastery.
+          return null;
+        }
+        const filteredCount = selectedMasteries.reduce(
+          (acc, m) => acc + (t.lessonsByMastery![m] ?? 0),
+          0
+        );
+        if (filteredCount === 0) return null;
+        return { ...t, lessonCount: filteredCount };
+      })
+      .filter((t): t is TopicTaxonomy => t !== null);
+    return recounted
+      .sort((a, b) => b.lessonCount - a.lessonCount)
+      .slice(0, 10);
+  }, [topics, selectedMasteries]);
+
   const sortedAuthors = useMemo(() => {
     return [...filteredAuthors].sort((a, b) => {
       let vA: unknown = a[sortKey as keyof UnifiedAuthorProfile];
@@ -333,7 +359,7 @@ export function OverviewClient({ authors, unresolvedMatches, unmatched, topics, 
       {/* ── 6. Topic taxonomy ─────────────────────────────── */}
       <div className="of-section">
         <h2 className="of-section__title">Topic Taxonomy</h2>
-        <TopicTaxonomyPanel topics={topics} source={topicsSource} />
+        <TopicTaxonomyPanel topics={filteredTopics} source={topicsSource} />
       </div>
 
       {/* ── 7. Author directory (with sticky filter bar) ──── */}

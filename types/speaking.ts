@@ -186,6 +186,9 @@ export interface TopicTaxonomy {
   topAuthors?: string[];
   insights?: string;
   curriculumSuggestions?: string[];
+  // Per-mastery contribution to this topic — drives the mastery filter on the
+  // Overview page. Optional so older cached payloads still parse.
+  lessonsByMastery?: Partial<Record<MasteryKey, number>>;
 }
 
 // =============================================================================

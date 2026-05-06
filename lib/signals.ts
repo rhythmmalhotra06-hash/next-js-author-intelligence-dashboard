@@ -595,7 +595,11 @@ export function detectDivergence(
 // topic-extraction pipeline runs. transformationRate stays null here; the AI
 // pass overlays it later.
 export function computeTopicTaxonomy(lessons: MasteryLessonRecord[]): TopicTaxonomy[] {
-  const byTopic = new Map<string, { count: number; speakers: Map<string, number> }>();
+  const byTopic = new Map<string, {
+    count: number;
+    speakers: Map<string, number>;
+    lessonsByMastery: Partial<Record<MasteryKey, number>>;
+  }>();
   for (const l of lessons) {
     // Module is the preferred topic bucket; fall back to mastery label so non-
     // Speaking masteries (where module linking isn't implemented yet) still
@@ -603,17 +607,18 @@ export function computeTopicTaxonomy(lessons: MasteryLessonRecord[]): TopicTaxon
     const topic = l.module ?? MASTERY_LABELS[l.masteryKey];
     let entry = byTopic.get(topic);
     if (!entry) {
-      entry = { count: 0, speakers: new Map() };
+      entry = { count: 0, speakers: new Map(), lessonsByMastery: {} };
       byTopic.set(topic, entry);
     }
     entry.count += 1;
+    entry.lessonsByMastery[l.masteryKey] = (entry.lessonsByMastery[l.masteryKey] ?? 0) + 1;
     for (const speaker of l.speakerNames) {
       entry.speakers.set(speaker, (entry.speakers.get(speaker) || 0) + 1);
     }
   }
 
   return Array.from(byTopic.entries())
-    .map(([topic, { count, speakers }]) => ({
+    .map(([topic, { count, speakers, lessonsByMastery }]) => ({
       topic,
       lessonCount: count,
       transformationRate: null,
@@ -621,9 +626,12 @@ export function computeTopicTaxonomy(lessons: MasteryLessonRecord[]): TopicTaxon
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([name]) => name),
+      lessonsByMastery,
     }))
-    .sort((a, b) => b.lessonCount - a.lessonCount)
-    .slice(0, 10);
+    .sort((a, b) => b.lessonCount - a.lessonCount);
+  // No top-N slice here — the Overview client filters by mastery and slices
+  // post-filter so topics that rank low globally can still surface within a
+  // single mastery view.
 }
 
 export function computeBusinessInsights(authors: UnifiedAuthorProfile[]): BusinessInsight[] {

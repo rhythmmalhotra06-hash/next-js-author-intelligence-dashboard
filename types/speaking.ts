@@ -310,6 +310,7 @@ export type SortKey =
   | "overallRewatchRate"
   | "overallAvgRating"
   | "ratingConsistency"
+  | "totalCost2025"
   | "totalCost2026";
 
 export type SortDirection = "asc" | "desc";

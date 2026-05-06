@@ -96,6 +96,19 @@ function isLikelyDuplicate(a: string, b: string): boolean {
     for (const t of tokA) if (tokB.has(t)) shared++;
     if (shared >= 2) return true;
   }
+  // "Vishen" vs "Vishen Lakhyani": every token of the shorter name appears in
+  // the longer one, and at least one of those tokens is ≥5 chars (avoids
+  // collapsing different people who share a generic first name).
+  if (tokA.size > 0 && tokB.size > 0 && tokA.size !== tokB.size) {
+    const [shortSet, longSet] = tokA.size <= tokB.size ? [tokA, tokB] : [tokB, tokA];
+    let allInLong = true;
+    let hasDistinctive = false;
+    for (const t of shortSet) {
+      if (!longSet.has(t)) { allInLong = false; break; }
+      if (t.length >= 5) hasDistinctive = true;
+    }
+    if (allInLong && hasDistinctive) return true;
+  }
   return false;
 }
 
@@ -185,6 +198,38 @@ export async function buildUnifiedAuthorTable(
           entry.feedback.push(fb);
           entry.masteries.add(masteryKey);
         }
+      }
+    }
+  }
+
+  // 1b. Merge near-duplicate keys ("Vishen" + "Vishen Lakhyani", "Dave Asprey"
+  // + "Dav Asprey", etc.) into the canonical entry. Canonical = the longer
+  // normalised key (more context = more specific name). Pre-sorting by length
+  // descending guarantees that when we visit a shorter key, the longer one has
+  // already become the canonical "absorber".
+  {
+    const sortedKeys = Array.from(authorsByNormalisedName.keys())
+      .sort((a, b) => b.length - a.length);
+    for (let i = 0; i < sortedKeys.length; i++) {
+      const ki = sortedKeys[i];
+      if (!authorsByNormalisedName.has(ki)) continue; // already absorbed
+      for (let j = i + 1; j < sortedKeys.length; j++) {
+        const kj = sortedKeys[j];
+        if (!authorsByNormalisedName.has(kj)) continue;
+        if (!isLikelyDuplicate(ki, kj)) continue;
+        const canonical = authorsByNormalisedName.get(ki)!;
+        const dup = authorsByNormalisedName.get(kj)!;
+        for (const v of dup.variants) canonical.variants.add(v);
+        for (const m of dup.masteries) canonical.masteries.add(m);
+        canonical.lessons.push(...dup.lessons);
+        canonical.feedback.push(...dup.feedback);
+        canonical.summitSessionCount += dup.summitSessionCount;
+        // Prefer the longer display name as canonical (e.g. "Vishen Lakhyani"
+        // over "Vishen") — more recognisable to users.
+        if (dup.displayName.length > canonical.displayName.length) {
+          canonical.displayName = dup.displayName;
+        }
+        authorsByNormalisedName.delete(kj);
       }
     }
   }
@@ -716,11 +761,15 @@ export function extractContractTerms(summary: string | null): ContractTerms {
     ?? summary.match(/\$\s*([\d,]+(?:\.\d+)?)/);
   const feeAmount = feeMatch ? parseFloat(feeMatch[1].replace(/,/g, "")) : null;
 
-  // Renewal / expiry date: looks for ISO dates, US dates, or month-year patterns
+  // Renewal / expiry date: looks for ISO dates, US dates, or month-year patterns.
+  // Accepts a wider set of phrasings ("renews", "expires on", "valid until/till/through",
+  // "ends on", "ending", "term ends", "due") and tolerates up to ~80 chars between
+  // the keyword and the date so AI-generated summaries with verbose wording still match.
+  const RENEWAL_KW = /renew\w*|expir\w*|valid\s+(?:until|till|through)|term\s+ends?|ending|ends?\s+(?:on|in)|due/i;
   const datePatterns = [
-    /(?:renewal|expir(?:y|es?|ation)|valid\s+until|term\s+ends?)[^\d]*(\d{4}-\d{2}-\d{2})/i,
-    /(?:renewal|expir(?:y|es?|ation)|valid\s+until|term\s+ends?)[^\d]*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4})/i,
-    /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/,
+    new RegExp(`(?:${RENEWAL_KW.source})[^\\d]{0,80}(\\d{4}-\\d{2}-\\d{2})`, "i"),
+    new RegExp(`(?:${RENEWAL_KW.source})[^\\d]{0,80}((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s+\\d{1,2},?\\s+\\d{4})`, "i"),
+    new RegExp(`(?:${RENEWAL_KW.source})[^\\d]{0,80}(\\d{1,2}[\\/\\-]\\d{1,2}[\\/\\-]\\d{4})`, "i"),
   ];
   let renewalDate: string | null = null;
   for (const pat of datePatterns) {
@@ -1128,6 +1177,18 @@ export function buildFinanceDashboardRows(
     profileByDisplayKey.set(normaliseName(p.authorName), p);
   }
 
+  // Fuzzy fallback: when neither exact key hits, scan unified for a likely
+  // duplicate (handles cases like finance entity "Vishen" vs unified key
+  // "vishen lakhyani"). Caps cost via the cheap pre-checks in isLikelyDuplicate.
+  const fuzzyFind = (key: string): UnifiedAuthorProfile | null => {
+    if (!key) return null;
+    for (const p of unified) {
+      if (isLikelyDuplicate(key, p.normalisedKey)) return p;
+      if (isLikelyDuplicate(key, normaliseName(p.authorName))) return p;
+    }
+    return null;
+  };
+
   const unmatchedEntities: string[] = [];
 
   // Build initial rows WITHOUT decision (we need dataset medians first)
@@ -1146,11 +1207,19 @@ export function buildFinanceDashboardRows(
     const totalPaid2025 = (entity.fee2025 ?? 0) + (entity.royalties2025 ?? 0) || null;
     const totalPaid2026 = (entity.fee2026 ?? 0) + (entity.royalties2026 ?? 0) || null;
 
-    // Try to match with a craft profile
-    const nameKey = normaliseName(entity.name);
-    const profile = profileByKey.get(nameKey)
-      ?? profileByDisplayKey.get(nameKey)
-      ?? null;
+    // Try to match with a craft profile. Prefer the linked AUTHOR display
+    // name (entity.authorName) over the formula NAME field, which often
+    // bundles the entity/legal name and won't match the unified key.
+    const authorKey = entity.authorName ? normaliseName(entity.authorName) : "";
+    const formulaKey = normaliseName(entity.name);
+    const profile =
+      (authorKey && (profileByKey.get(authorKey) ?? profileByDisplayKey.get(authorKey))) ||
+      profileByKey.get(formulaKey) ||
+      profileByDisplayKey.get(formulaKey) ||
+      fuzzyFind(authorKey) ||
+      fuzzyFind(formulaKey) ||
+      null;
+    const nameKey = authorKey || formulaKey;
 
     if (!profile) unmatchedEntities.push(entity.name);
 

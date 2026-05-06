@@ -67,8 +67,19 @@ export function UnifiedAuthorTable({ authors, sortKey, sortDir, onSort, onCostCl
             <th onClick={() => onSort("ratingConsistency")} style={{ cursor: "pointer", textAlign: "right" }}>
               Consistency {sortKey === "ratingConsistency" && (sortDir === "asc" ? "↑" : "↓")}
             </th>
-            <th onClick={() => onSort("totalCost2026")} style={{ cursor: "pointer", textAlign: "right" }}>
-              2026 Fees {sortKey === "totalCost2026" && (sortDir === "asc" ? "↑" : "↓")}
+            <th
+              onClick={() => onSort("totalCost2025")}
+              style={{ cursor: "pointer", textAlign: "right" }}
+              title="Speaker fee — Mastery products only (royalties tracked separately on the Finance page)"
+            >
+              Speaker Fee 2025 {sortKey === "totalCost2025" && (sortDir === "asc" ? "↑" : "↓")}
+            </th>
+            <th
+              onClick={() => onSort("totalCost2026")}
+              style={{ cursor: "pointer", textAlign: "right" }}
+              title="Speaker fee — Mastery products only (royalties tracked separately on the Finance page)"
+            >
+              Speaker Fee 2026 {sortKey === "totalCost2026" && (sortDir === "asc" ? "↑" : "↓")}
             </th>
           </tr>
         </thead>
@@ -129,7 +140,21 @@ export function UnifiedAuthorTable({ authors, sortKey, sortDir, onSort, onCostCl
                     type="button"
                     className="of-cost-cell"
                     onClick={() => onCostClick(author)}
-                    title="View invoice breakdown"
+                    title="Speaker fee — Mastery products only. Click to view invoice breakdown."
+                  >
+                    {currency(author.finance.speakerFeeTotal2025)}
+                  </button>
+                ) : (
+                  currency(author.finance?.speakerFeeTotal2025 ?? null)
+                )}
+              </td>
+              <td style={{ textAlign: "right" }}>
+                {author.finance && onCostClick ? (
+                  <button
+                    type="button"
+                    className="of-cost-cell"
+                    onClick={() => onCostClick(author)}
+                    title="Speaker fee — Mastery products only. Click to view invoice breakdown."
                   >
                     {currency(author.totalCost2026)}
                   </button>

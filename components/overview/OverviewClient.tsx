@@ -19,7 +19,6 @@ import { TableControls } from "./TableControls";
 import { BusinessInsights } from "./BusinessInsights";
 import { MasteryFilter } from "./MasteryFilter";
 import { SummaryMetrics } from "./SummaryMetrics";
-import { UnresolvedNamesList } from "./UnresolvedNamesList";
 import { UnmatchedAuthorsList } from "./UnmatchedAuthorsList";
 import { FinanceDetailPanel } from "./FinanceDetailPanel";
 import { MethodologyCard } from "./MethodologyCard";
@@ -170,6 +169,9 @@ export function OverviewClient({ authors, unresolvedMatches, unmatched, topics, 
       if (sortKey === "totalCost2026") {
         vA = a.totalCost2026 ?? -1;
         vB = b.totalCost2026 ?? -1;
+      } else if (sortKey === "totalCost2025") {
+        vA = a.finance?.speakerFeeTotal2025 ?? -1;
+        vB = b.finance?.speakerFeeTotal2025 ?? -1;
       }
 
       if (vA === vB) return 0;
@@ -365,12 +367,10 @@ export function OverviewClient({ authors, unresolvedMatches, unmatched, topics, 
       {/* ── 7. Author directory (with sticky filter bar) ──── */}
       <div className="of-section">
         <h2 className="of-section__title">Author Directory</h2>
-
-        {unresolvedMatches.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <UnresolvedNamesList matches={unresolvedMatches} />
-          </div>
-        )}
+        <p className="of-page__subtitle" style={{ marginTop: -6, marginBottom: 12, fontSize: 12 }}>
+          Speaker Fee 2025 / 2026 columns show <strong>Mastery speaker fees only</strong>.
+          Royalties are tracked on the Finance page and not included here.
+        </p>
 
         <div style={{ marginBottom: 16 }}>
           <TableControls
